@@ -6,7 +6,8 @@ LDIR = libmx
 #compiler settings
 CC = gcc
 CFLAGS = -std=c11
-CCFLAGS = -std=c11 -g -Wall -Wextra -Werror -Wpedantic# -Og -g3 -fsanitize=address
+CCFLAGS = -std=c11 -Og -g3 -fsanitize=address# -g -Wall -Wextra -Werror -Wpedantic\
+
 FLAGS = $(CCFLAGS) -I $(IDIR) -I $(LDIR)/$(IDIR)
 #dependencies
 NAME = uls
