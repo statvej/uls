@@ -1,36 +1,73 @@
 #include "../inc/uls.h"
 
 int main(int ac, char **av) {
-    // time_t rawtime;
-    // time(&rawtime);
-    // localtime(&rawtime);
-    // char *time = ctime(&rawtime);
-    // printf("%s\n", time_formater(time));
-
     t_flags flags = mx_get_flags(ac, av);
     if (flags.l == true) {
         printf("DEPLOY THE LARGE ONE!!!!\n");
     }
+
     char *dir_name = get_dir_name(ac, av);
-    printf("%s\n", dir_name);
+    int file_count = get_files_count(dir_name, MODE_NORMAL);
+    printf("FILES COUNT IS %d\n\n", file_count);
+
     DIR *dir;
     struct dirent *entry;
+    t_stat rd_stat;
 
-    dir = opendir(".");
+    dir = opendir(dir_name);
     if (!dir) {
         perror("diropen");
-        exit(1);
-    };
-struct stat *s_stat;
+        exit(EXIT_FAILURE);
+    }
+    t_passwd *user_info;
+
     while ((entry = readdir(dir)) != NULL) {
-        printf("%llu - %s [%d] %d;%d\n", entry->d_ino, entry->d_name, entry->d_type, entry->d_reclen, entry->d_namlen);
-        char * file_path = mx_strcat(dir_name, (char*)entry->d_name);
-        printf("file path is %s", file_path);
-        lstat(file_path, s_stat);
-        free(file_path);
-    };
+
+        if (entry->d_name[0] != '\0') {
+            if (lstat(entry->d_name, &rd_stat) == -1) {
+                perror("lstat");
+                exit(EXIT_FAILURE);
+            }
+            user_info = getpwuid(rd_stat.st_uid);
+            char buf_perm[10];
+            mx_strmode(rd_stat.st_mode, buf_perm);
+            printf("%s\t", buf_perm);
+
+            printf(
+                "%llu - %s [%c] %d;%d   ; Stat info %llu\t Owner is %s\n", entry->d_ino, entry->d_name,
+                get_type(entry->d_type), entry->d_reclen, entry->d_namlen, rd_stat.st_blocks, user_info->pw_name);
+        }
+    }
 
     closedir(dir);
+}
+
+void mx_strmode(mode_t mode, char *buf) {
+    const char chars[] = "rwxrwxrwx";
+    for (size_t i = 0; i < 9; i++) {
+        buf[i] = (mode & (1 << (8 - i))) ? chars[i] : '-';
+    }
+    buf[9] = '\0';
+}
+
+int get_files_count(char *path, int mode) {
+    int res = 0;
+    DIR *dir = opendir(path);
+    struct dirent *entry;
+    if (mode == MODE_NORMAL) {
+        while ((entry = readdir(dir)) != NULL) {
+            if (entry->d_name[0] != '.') {
+                res++;
+            }
+        }
+    }
+    else if (mode == MODE_INCLUDE_HIDEN) {
+        while (readdir(dir) != NULL) {
+            res++;
+        }
+    }
+    closedir(dir);
+    return res;
 }
 
 char *time_formater(char *raw_time) {
@@ -74,4 +111,23 @@ char *get_dir_name(int ac, char **av) {
         }
     }
     return ".";
+}
+char get_type(int d_type) {
+    switch (d_type) {
+    case DT_BLK:
+        return 'b';
+    case DT_CHR:
+        return 'c';
+    case DT_DIR:
+        return 'd';
+    case DT_LNK:
+        return 'l';
+    case DT_REG:
+        return '-';
+    case DT_SOCK:
+        return 's';
+    case DT_FIFO:
+        return 'p';
+    }
+    return -1;
 }
