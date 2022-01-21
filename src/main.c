@@ -20,6 +20,7 @@ int main(int ac, char **av) {
         exit(EXIT_FAILURE);
     }
     t_passwd *user_info;
+    t_group *group_info;
 
     while ((entry = readdir(dir)) != NULL) {
 
@@ -29,13 +30,20 @@ int main(int ac, char **av) {
                 exit(EXIT_FAILURE);
             }
             user_info = getpwuid(rd_stat.st_uid);
+
+            if ((group_info = getgrgid(rd_stat.st_gid)) == NULL) {       //error
+                perror("getgrgid() error");
+            }
+
             char buf_perm[10];
+            char *raw_time = ctime((const time_t *)&rd_stat.st_mtimespec);
+            char *time_tr = time_formater(raw_time);
             mx_strmode(rd_stat.st_mode, buf_perm);
-            printf("%s\t", buf_perm);
+            printf("%c%s\t", get_type(entry->d_type), buf_perm);
 
             printf(
-                "%llu - %s [%c] %d;%d   ; Stat info %llu\t Owner is %s\n", entry->d_ino, entry->d_name,
-                get_type(entry->d_type), entry->d_reclen, entry->d_namlen, rd_stat.st_blocks, user_info->pw_name);
+                "%d %s\t%lld  %s      %s\n", rd_stat.st_nlink, user_info->pw_name, rd_stat.st_size, time_tr,
+                entry->d_name);
         }
     }
 

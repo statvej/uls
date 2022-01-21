@@ -48,6 +48,7 @@
 typedef struct dirent t_dirent;
 typedef struct stat t_stat;
 typedef struct passwd t_passwd;
+typedef struct group t_group;
 typedef struct {
     char type;
     char perms[9];
