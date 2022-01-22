@@ -9,7 +9,6 @@ int main(int ac, char **av) {
     char *dir_name = get_dir_name(ac, av);
     int file_count = get_files_count(dir_name, MODE_NORMAL);
     printf("FILES COUNT IS %d\n\n", file_count);
-
     DIR *dir;
     struct dirent *entry;
     t_stat rd_stat;
@@ -21,6 +20,13 @@ int main(int ac, char **av) {
     }
     t_passwd *user_info;
     t_group *group_info;
+    char *group_name;
+
+    // t_save_stat *sv_stat = init_save_stat(file_count);
+    t_save_stat *sv_stat = (t_save_stat *)malloc(sizeof(t_save_stat) * file_count);
+    int read_stat_count = 0;
+
+    int block_sum = 0;
 
     while ((entry = readdir(dir)) != NULL) {
 
@@ -29,26 +35,36 @@ int main(int ac, char **av) {
                 perror("lstat");
                 exit(EXIT_FAILURE);
             }
-            user_info = getpwuid(rd_stat.st_uid);
 
-            if ((group_info = getgrgid(rd_stat.st_gid)) == NULL) {       //error
-                perror("getgrgid() error");
+            user_info = getpwuid(rd_stat.st_uid); // add error detection
+
+            if ((group_info = getgrgid(rd_stat.st_gid)) == NULL) {
+                group_name = mx_strdup(mx_itoa((int)rd_stat.st_gid));
+            }
+            else {
+                group_name = mx_strdup(group_info->gr_name);
             }
 
             char buf_perm[10];
             char *raw_time = ctime((const time_t *)&rd_stat.st_mtimespec);
             char *time_tr = time_formater(raw_time);
             mx_strmode(rd_stat.st_mode, buf_perm);
-            printf("%c%s\t", get_type(entry->d_type), buf_perm);
 
-            printf(
-                "%d %s\t%lld  %s      %s\n", rd_stat.st_nlink, user_info->pw_name, rd_stat.st_size, time_tr,
-                entry->d_name);
+            sv_stat[read_stat_count].user_name = mx_strdup(user_info->pw_name);
+            sv_stat[read_stat_count].group_name = mx_strdup(group_name);
+            sv_stat[read_stat_count].perms = mx_strdup(buf_perm);
+            sv_stat[read_stat_count].time = mx_strdup(time_tr);
+            sv_stat[read_stat_count].type = get_type(entry->d_type);
+            sv_stat[read_stat_count].links_count = rd_stat.st_nlink;
+            sv_stat[read_stat_count].used_mem = rd_stat.st_size;
+
+            block_sum += rd_stat.st_blocks;
+            read_stat_count++;
         }
     }
-
+    print_check_sv_stat(sv_stat, file_count);
     closedir(dir);
-}
+} 
 
 void mx_strmode(mode_t mode, char *buf) {
     const char chars[] = "rwxrwxrwx";
@@ -138,4 +154,22 @@ char get_type(int d_type) {
         return 'p';
     }
     return -1;
+}
+t_save_stat *init_save_stat(int file_count) {
+    t_save_stat *sv_stat = (t_save_stat *)malloc(sizeof(t_save_stat) * file_count);
+    for (int i = 0; i < file_count; i++) {
+        sv_stat[i].group_name = NULL;
+        sv_stat[i].name = NULL;
+        sv_stat[i].perms = NULL;
+        sv_stat[i].time = NULL;
+        sv_stat[i].user_name = NULL;
+    }
+    return sv_stat;
+}
+void print_check_sv_stat(t_save_stat *sv_stat, int file_count) {
+    for (int i = 0; i < file_count; i++) {
+        printf(
+            "%c%s  %d %s  %s  %llu  %s %s", sv_stat[i].type, sv_stat[i].perms, sv_stat[i].links_count,
+            sv_stat[i].user_name, sv_stat[i].group_name, sv_stat[i].used_mem, sv_stat[i].time, sv_stat[i].name);
+    }
 }

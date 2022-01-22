@@ -51,13 +51,13 @@ typedef struct passwd t_passwd;
 typedef struct group t_group;
 typedef struct {
     char type;
-    char perms[9];
+    char* perms;//9 chars
     int links_count;
     char *user_name;
     char *group_name;
-    int used_mem;
-    char time[TIME_LENGTH];
-    char name[1024];
+    long long int used_mem;
+    char* time;//12 chars
+    char* name;
 } t_save_stat;
 
 typedef struct {
@@ -79,3 +79,7 @@ t_flags init_flags(void);
 int get_files_count(char *path, int mode); // Use only if directory we intrested in isnt opened
 
 char get_type(int d_type);
+
+t_save_stat *init_save_stat(int file_count);
+
+void print_check_sv_stat(t_save_stat *sv_stat, int file_count);
