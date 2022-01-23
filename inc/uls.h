@@ -20,30 +20,19 @@
 #include <time.h>
 #include <ctype.h>
 
-#define S_IRWXU 0000700 /* RWX mask for owner */
-#define S_IRUSR 0000400 /* R for owner */
-#define S_IWUSR 0000200 /* W for owner */
-#define S_IXUSR 0000100 /* X for owner */
-
-#define S_IRWXG 0000070 /* RWX mask for group */
-#define S_IRGRP 0000040 /* R for group */
-#define S_IWGRP 0000020 /* W for group */
-#define S_IXGRP 0000010 /* X for group */
-
-#define S_IRWXO 0000007 /* RWX mask for other */
-#define S_IROTH 0000004 /* R for other */
-#define S_IWOTH 0000002 /* W for other */
-#define S_IXOTH 0000001 /* X for other */
-
-#define S_ISUID 0004000 /* set user id on execution */
-#define S_ISGID 0002000 /* set group id on execution */
-#define S_ISVTX 0001000 /* save swapped text even after use */
 
 #define MODE_NORMAL 1
 #define MODE_INCLUDE_HIDEN 2
+
+#define PRINT_MODE_NORMAL 1
+#define PRINT_MODE_LONG 2
+
 #define TIME_LENGTH 12
 #define TYPE_FILE 8
 #define TYPE_DIR 4
+
+#define DOUBLE_SPACE "  "
+#define SINGLE_SPACE " "
 
 typedef struct dirent t_dirent;
 typedef struct stat t_stat;
@@ -53,7 +42,7 @@ typedef struct {
     char type;
     char* perms;//9 chars
     int links_count;
-    char *user_name;
+    char *user_name; 
     char *group_name;
     long long int used_mem;
     char* time;//12 chars
@@ -62,6 +51,7 @@ typedef struct {
 
 typedef struct {
     bool l;
+    bool a;
 } t_flags;
 
 void mx_strmode(mode_t mode, char *buf);
@@ -83,3 +73,13 @@ char get_type(int d_type);
 t_save_stat *init_save_stat(int file_count);
 
 void print_check_sv_stat(t_save_stat *sv_stat, int file_count);
+
+t_save_stat *mx_read_data(DIR *dir, int file_count, int *block_sum, char * path, int mode);
+
+char mx_get_restr(int mode);
+
+int get_read_mode(t_flags flags);
+
+int get_print_mode(t_flags flags);
+
+void mx_print_results(t_save_stat *sv_stat, int file_count, int print_mode);
