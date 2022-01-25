@@ -33,7 +33,8 @@
 
 #define DOUBLE_SPACE "  "
 #define SINGLE_SPACE " "
-
+#define CURRENT_DIR "./"
+ 
 typedef struct dirent t_dirent;
 typedef struct stat t_stat;
 typedef struct passwd t_passwd;
@@ -74,7 +75,7 @@ t_save_stat *init_save_stat(int file_count);
 
 void print_check_sv_stat(t_save_stat *sv_stat, int file_count);
 
-t_save_stat *mx_read_data(DIR *dir, int file_count, int *block_sum, char * path, int mode);
+t_save_stat *mx_read_data_from_dir(DIR *dir, int file_count, int *block_sum, char * path, int mode);
 
 char mx_get_restr(int mode);
 
@@ -82,4 +83,12 @@ int get_read_mode(t_flags flags);
 
 int get_print_mode(t_flags flags);
 
-void mx_print_results(t_save_stat *sv_stat, int file_count, int print_mode);
+void mx_print_results(t_save_stat *sv_stat, int file_count, int block_sum, int print_mode);
+
+void get_dir_file_number_in_args(int ac, char ** av, int * dir_count, int * file_count);
+
+t_save_stat mx_get_data_frm_entry(t_dirent *entry, int *block_sum, char *path);
+
+t_save_stat *get_file_agr_data(int file_count, int ac, char **av);
+
+bool mx_is_dir(char *name, char *path);

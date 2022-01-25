@@ -2,29 +2,79 @@
 
 int main(int ac, char **av) {
     t_flags flags = mx_get_flags(ac, av);
-    int read_mode, print_mode;
+    int read_mode, print_mode, file_in_arg, dir_in_arg;
     int block_sum = 0;
     read_mode = get_read_mode(flags);
     print_mode = get_print_mode(flags);
+    get_dir_file_number_in_args(ac, av, &dir_in_arg, &file_in_arg);
 
     char *dir_name = get_dir_name(ac, av);
-    int file_count = get_files_count(dir_name, read_mode);
     char *path = NULL;
 
     if (*dir_name != '.') {
         path = mx_strjoin(dir_name, "/");
     }
-    // printf("FILES COUNT IS %d\n\n", file_count);
-    DIR *dir = opendir(dir_name);
-    if (!dir) {
-        perror("diropen");
-        exit(EXIT_FAILURE);
-    }
+    fprintf(stderr, "DIR COUNT IS %d; FILE COUNT IS %d\n", dir_in_arg, file_in_arg);
 
-    t_save_stat *sv_stat = mx_read_data(dir, file_count, &block_sum, path, read_mode);
-    // print_check_sv_stat(sv_stat, file_count);
-    mx_print_results(sv_stat, file_count, print_mode);
+    if (dir_in_arg + file_in_arg == 0) { // there for no arguments except flags
+        printf("No args scenario\n");
+        int file_count = get_files_count(dir_name, read_mode);
+        DIR *dir = opendir(dir_name);
+        if (!dir) {
+            perror("diropen");
+            exit(EXIT_FAILURE);
+        }
+        t_save_stat *sv_stat = mx_read_data_from_dir(dir, file_count, &block_sum, path, read_mode);
+        mx_print_results(sv_stat, file_count, block_sum, print_mode);
+        closedir(dir);
+    }
+    if (file_in_arg >= 1) { // if there are files as args
+        printf("files scenario\n");
+        t_save_stat *sv_file_stat = get_file_agr_data(file_in_arg, ac, av);
+        mx_print_results(sv_file_stat, file_in_arg, -1, print_mode);
+    }
+    if (dir_in_arg == 1) {
+        printf("1 Dir\n");
+        if (file_in_arg >= 1) {
+            mx_printstr(dir_name);
+            mx_printstr(":\n");
+        }
+        int file_count = get_files_count(dir_name, read_mode);
+        DIR *dir = opendir(dir_name);
+        if (!dir) {
+            perror("diropen");
+            exit(EXIT_FAILURE);
+        }
+        t_save_stat *sv_stat = mx_read_data_from_dir(dir, file_count, &block_sum, path, read_mode);
+        mx_print_results(sv_stat, file_count, block_sum, print_mode);
+        closedir(dir);
+    }
+    if (dir_in_arg >= 2) {
+    }
+}
+
+t_save_stat *get_file_agr_data(int file_count, int ac, char **av) {
+
+    t_save_stat *ret_stat = init_save_stat(file_count);
+    t_dirent *entry;
+    int dummy = 0;
+    int global_count = 0;
+    DIR *dir = opendir(CURRENT_DIR);
+    while ((entry = readdir(dir)) != NULL) {
+        for (int i = 1; i < ac; i++) {
+            if (mx_is_dir(entry->d_name, CURRENT_DIR) == false) {
+
+                if (mx_strcmp(av[i], entry->d_name) == 0) {
+                    ret_stat[global_count] = mx_get_data_frm_entry(entry, &dummy, CURRENT_DIR);
+                    global_count++;
+                }
+                if (global_count >= file_count)
+                    break;
+            }
+        }
+    }
     closedir(dir);
+    return ret_stat;
 }
 
 int get_read_mode(t_flags flags) {
@@ -87,6 +137,18 @@ t_flags init_flags(void) {
     return ret;
 }
 
+bool mx_is_dir(char *name, char *path) {
+    char *full_name = mx_strjoin(path, name);
+    DIR *dir;
+    if ((dir = opendir(full_name)) == NULL) {
+        return false;
+    }
+    else {
+        closedir(dir);
+        return true;
+    }
+}
+
 t_flags mx_get_flags(int ac, char **av) {
 
     t_flags ret = init_flags();
@@ -115,7 +177,7 @@ t_flags mx_get_flags(int ac, char **av) {
 
 char *get_dir_name(int ac, char **av) {
     for (int i = 1; i < ac; i++) {
-        if (av[i][0] != '-') {
+        if (av[i][0] != '-' && mx_is_dir(av[i], CURRENT_DIR) == true) {
             return av[i];
         }
     }
@@ -172,13 +234,8 @@ char mx_get_restr(int mode) {
     return -1;
 }
 
-t_save_stat *mx_read_data(DIR *dir, int file_count, int *block_sum, char *path, int mode) {
+t_save_stat *mx_read_data_from_dir(DIR *dir, int file_count, int *block_sum, char *path, int mode) {
     struct dirent *entry;
-    t_stat rd_stat;
-    t_passwd *user_info;
-    t_group *group_info;
-    char *group_name;
-    char *user_name;
 
     char restr = mx_get_restr(mode);
 
@@ -190,39 +247,7 @@ t_save_stat *mx_read_data(DIR *dir, int file_count, int *block_sum, char *path, 
 
         if (entry->d_name[0] != restr) {
 
-            char *dir_entry = mx_strjoin(path, entry->d_name);
-            // printf("%s", dir_entry);
-            if (lstat(dir_entry, &rd_stat) == -1) {
-                perror("lstat");
-                exit(EXIT_FAILURE);
-            }
-
-            if ((user_info = getpwuid(rd_stat.st_uid)) == NULL)
-                user_name = mx_strdup(mx_itoa((int)rd_stat.st_uid));
-            else
-                user_name = mx_strdup(user_info->pw_name);
-
-            if ((group_info = getgrgid(rd_stat.st_gid)) == NULL)
-                group_name = mx_strdup(mx_itoa((int)rd_stat.st_gid));
-            else
-                group_name = mx_strdup(group_info->gr_name);
-
-            char buf_perm[10];
-            char *raw_time = ctime((const time_t *)&rd_stat.st_mtimespec);
-            char *time_tr = time_formater(raw_time);
-            mx_strmode(rd_stat.st_mode, buf_perm);
-
-            sv_stat[read_stat_count].user_name = mx_strdup(user_name);
-            sv_stat[read_stat_count].group_name = mx_strdup(group_name);
-            sv_stat[read_stat_count].perms = mx_strdup(buf_perm);
-            sv_stat[read_stat_count].time = mx_strdup(time_tr);
-            sv_stat[read_stat_count].type = get_type(entry->d_type);
-            sv_stat[read_stat_count].links_count = rd_stat.st_nlink;
-            sv_stat[read_stat_count].used_mem = rd_stat.st_size;
-            sv_stat[read_stat_count].name = mx_strdup(entry->d_name);
-
-            block_sum += rd_stat.st_blocks;
-
+            sv_stat[read_stat_count] = mx_get_data_frm_entry(entry, block_sum, path);
             read_stat_count++;
             if (read_stat_count >= file_count)
                 break;
@@ -231,7 +256,18 @@ t_save_stat *mx_read_data(DIR *dir, int file_count, int *block_sum, char *path, 
     return sv_stat;
 }
 
-void mx_print_results(t_save_stat *sv_stat, int file_count, int print_mode) {
+void get_dir_file_number_in_args(int ac, char **av, int *dir_count, int *file_count) {
+    for (int i = 1; i < ac; i++) {
+        if (*av[i] != '-') {
+            if (mx_is_dir(av[i], CURRENT_DIR) == true)
+                *dir_count = *dir_count + 1;
+            else if (mx_is_dir(av[i], CURRENT_DIR) == false)
+                *file_count = *file_count + 1;
+        }
+    }
+}
+
+void mx_print_results(t_save_stat *sv_stat, int file_count, int block_sum, int print_mode) {
     if (print_mode == PRINT_MODE_NORMAL) {
         for (int i = 0; i < file_count; i++) {
             mx_printstr(sv_stat[i].name);
@@ -240,6 +276,11 @@ void mx_print_results(t_save_stat *sv_stat, int file_count, int print_mode) {
         mx_printchar('\n');
     }
     else if (print_mode == PRINT_MODE_LONG) {
+        if (block_sum != -1) {
+            mx_printstr("total ");
+            mx_printint(block_sum);
+            mx_printchar('\n');
+        }
         for (int i = 0; i < file_count; i++) {
             mx_printchar(sv_stat[i].type);
             mx_printstr(sv_stat[i].perms);
@@ -258,4 +299,45 @@ void mx_print_results(t_save_stat *sv_stat, int file_count, int print_mode) {
             mx_printchar('\n');
         }
     }
+}
+t_save_stat mx_get_data_frm_entry(t_dirent *entry, int *block_sum, char *path) {
+    t_stat rd_stat;
+    t_passwd *user_info;
+    t_group *group_info;
+    char *group_name;
+    char *user_name;
+    char *dir_entry = mx_strjoin(path, entry->d_name);
+    t_save_stat sv_stat;
+    // printf("%s", dir_entry);
+    if (lstat(dir_entry, &rd_stat) == -1) {
+        perror("lstat");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((user_info = getpwuid(rd_stat.st_uid)) == NULL)
+        user_name = mx_strdup(mx_itoa((int)rd_stat.st_uid));
+    else
+        user_name = mx_strdup(user_info->pw_name);
+
+    if ((group_info = getgrgid(rd_stat.st_gid)) == NULL)
+        group_name = mx_strdup(mx_itoa((int)rd_stat.st_gid));
+    else
+        group_name = mx_strdup(group_info->gr_name);
+
+    char buf_perm[10];
+    char *raw_time = ctime((const time_t *)&rd_stat.st_mtimespec);
+    char *time_tr = time_formater(raw_time);
+    mx_strmode(rd_stat.st_mode, buf_perm);
+
+    sv_stat.user_name = mx_strdup(user_name);
+    sv_stat.group_name = mx_strdup(group_name);
+    sv_stat.perms = mx_strdup(buf_perm);
+    sv_stat.time = mx_strdup(time_tr);
+    sv_stat.type = get_type(entry->d_type);
+    sv_stat.links_count = rd_stat.st_nlink;
+    sv_stat.used_mem = rd_stat.st_size;
+    sv_stat.name = mx_strdup(entry->d_name);
+
+    *block_sum += rd_stat.st_blocks;
+    return sv_stat;
 }
