@@ -50,7 +50,55 @@ int main(int ac, char **av) {
         closedir(dir);
     }
     if (dir_in_arg >= 2) {
+        char **dir_names = get_dir_names(av, ac, dir_in_arg);
+        //mx_print_strarr(dir_names, "\n");
+        get_multiple_dir_data(dir_names, dir_in_arg, read_mode);
     }
+
+    return 0;
+}
+
+char **get_dir_names(char **av, int ac, int dir_count) {
+    char **ret = (char **)malloc(sizeof(char *) * dir_count);
+    int grand_count = 0;
+    for (int i = 0; i < ac; i++) {
+        //printf("%s\n", av[i]);
+        if (mx_is_dir(av[i], CURRENT_DIR) == true) {
+            ret[grand_count] = strdup(av[i]);
+            //printf("%s\n", ret[grand_count]);
+            grand_count++;
+        }
+        if (grand_count >= dir_count)
+            break;
+    }
+    //mx_print_strarr(ret, "\n");
+    return ret;
+}
+
+t_multi_sv_stat *init_multi_save_stat(int dir_count) {
+    t_multi_sv_stat *ret = (t_multi_sv_stat *)malloc(sizeof(t_multi_sv_stat) * dir_count);
+    for (int i = 0; i < dir_count; i++) {
+        ret[i].sv_stat = NULL;
+        ret[i].name = NULL;
+        ret[i].block_count = 0;
+    } 
+    return ret;
+}
+
+
+t_multi_sv_stat *get_multiple_dir_data(char **dir_names, int dir_count, int read_mode) {
+    t_multi_sv_stat *ret = init_multi_save_stat(dir_count);
+    for (int i = 0; i < dir_count; i++) {
+        //fprintf(stderr, "%s\n", dir_names[i]);
+        DIR *dir = opendir(dir_names[i]);
+        int file_count = get_files_count(dir_names[i], read_mode);
+        char * path = mx_strjoin(dir_names[i], "/");
+        ret[i].name = mx_strdup(dir_names[i]);
+        ret[i].sv_stat = mx_read_data_from_dir(dir, file_count, &(ret[i].block_count), path, read_mode);
+        mx_print_results(ret[i].sv_stat, file_count, ret[i].block_count, PRINT_MODE_LONG);
+        //printf("CHECK\n");
+    }
+    return ret;
 }
 
 t_save_stat *get_file_agr_data(int file_count, int ac, char **av) {
@@ -308,7 +356,7 @@ t_save_stat mx_get_data_frm_entry(t_dirent *entry, int *block_sum, char *path) {
     char *user_name;
     char *dir_entry = mx_strjoin(path, entry->d_name);
     t_save_stat sv_stat;
-    // printf("%s", dir_entry);
+    //fprintf(stderr, "%s\t\n", dir_entry);
     if (lstat(dir_entry, &rd_stat) == -1) {
         perror("lstat");
         exit(EXIT_FAILURE);
