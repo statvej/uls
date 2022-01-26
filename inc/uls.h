@@ -104,3 +104,10 @@ t_multi_sv_stat *get_multiple_dir_data(char **dir_names, int dir_count, int read
 char **get_dir_names(char **av, int ac, int dir_count);
 
 void print_multi_sv_stat(t_multi_sv_stat * multi_sv, int dir_count, int print_mode);
+
+t_save_stat *mx_sort_in_dir(t_save_stat *sv_stat, int file_count);
+
+t_multi_sv_stat *mx_sort_in_multi(t_multi_sv_stat *multi_sv_stat, int dir_count);
+
+t_multi_sv_stat *init_multi_save_stat(int dir_count);
+
