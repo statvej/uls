@@ -52,6 +52,7 @@ typedef struct {
 typedef struct {
     t_save_stat *sv_stat;
     char *name;
+    int file_ins;
     int block_count;
 } t_multi_sv_stat;
 
@@ -101,3 +102,5 @@ bool mx_is_dir(char *name, char *path);
 t_multi_sv_stat *get_multiple_dir_data(char **dir_names, int dir_count, int read_mode);
 
 char **get_dir_names(char **av, int ac, int dir_count);
+
+void print_multi_sv_stat(t_multi_sv_stat * multi_sv, int dir_count, int print_mode);

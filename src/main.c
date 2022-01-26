@@ -14,10 +14,8 @@ int main(int ac, char **av) {
     if (*dir_name != '.') {
         path = mx_strjoin(dir_name, "/");
     }
-    fprintf(stderr, "DIR COUNT IS %d; FILE COUNT IS %d\n", dir_in_arg, file_in_arg);
 
     if (dir_in_arg + file_in_arg == 0) { // there for no arguments except flags
-        printf("No args scenario\n");
         int file_count = get_files_count(dir_name, read_mode);
         DIR *dir = opendir(dir_name);
         if (!dir) {
@@ -29,12 +27,10 @@ int main(int ac, char **av) {
         closedir(dir);
     }
     if (file_in_arg >= 1) { // if there are files as args
-        printf("files scenario\n");
         t_save_stat *sv_file_stat = get_file_agr_data(file_in_arg, ac, av);
         mx_print_results(sv_file_stat, file_in_arg, -1, print_mode);
     }
     if (dir_in_arg == 1) {
-        printf("1 Dir\n");
         if (file_in_arg >= 1) {
             mx_printstr(dir_name);
             mx_printstr(":\n");
@@ -50,9 +46,11 @@ int main(int ac, char **av) {
         closedir(dir);
     }
     if (dir_in_arg >= 2) {
+        if (file_in_arg >= 1)
+            mx_printchar('\n');
         char **dir_names = get_dir_names(av, ac, dir_in_arg);
-        //mx_print_strarr(dir_names, "\n");
-        get_multiple_dir_data(dir_names, dir_in_arg, read_mode);
+        t_multi_sv_stat *multi_sv = get_multiple_dir_data(dir_names, dir_in_arg, read_mode);
+        print_multi_sv_stat(multi_sv, dir_in_arg, print_mode);
     }
 
     return 0;
@@ -62,16 +60,13 @@ char **get_dir_names(char **av, int ac, int dir_count) {
     char **ret = (char **)malloc(sizeof(char *) * dir_count);
     int grand_count = 0;
     for (int i = 0; i < ac; i++) {
-        //printf("%s\n", av[i]);
         if (mx_is_dir(av[i], CURRENT_DIR) == true) {
             ret[grand_count] = strdup(av[i]);
-            //printf("%s\n", ret[grand_count]);
             grand_count++;
         }
         if (grand_count >= dir_count)
             break;
     }
-    //mx_print_strarr(ret, "\n");
     return ret;
 }
 
@@ -81,24 +76,35 @@ t_multi_sv_stat *init_multi_save_stat(int dir_count) {
         ret[i].sv_stat = NULL;
         ret[i].name = NULL;
         ret[i].block_count = 0;
-    } 
+    }
     return ret;
 }
-
 
 t_multi_sv_stat *get_multiple_dir_data(char **dir_names, int dir_count, int read_mode) {
     t_multi_sv_stat *ret = init_multi_save_stat(dir_count);
     for (int i = 0; i < dir_count; i++) {
-        //fprintf(stderr, "%s\n", dir_names[i]);
         DIR *dir = opendir(dir_names[i]);
         int file_count = get_files_count(dir_names[i], read_mode);
-        char * path = mx_strjoin(dir_names[i], "/");
+        char *path = mx_strjoin(dir_names[i], "/");
+        ret[i].file_ins = file_count;
         ret[i].name = mx_strdup(dir_names[i]);
         ret[i].sv_stat = mx_read_data_from_dir(dir, file_count, &(ret[i].block_count), path, read_mode);
-        mx_print_results(ret[i].sv_stat, file_count, ret[i].block_count, PRINT_MODE_LONG);
-        //printf("CHECK\n");
     }
     return ret;
+}
+
+void print_multi_sv_stat(t_multi_sv_stat *multi_sv, int dir_count, int print_mode) {
+    for (int i = 0; i < dir_count; i++) {
+        if (i >= 1)
+            mx_printchar('\n');
+
+        mx_printstr(multi_sv[i].name);
+        mx_printstr(":\n");
+        if (multi_sv[i].block_count != 0)
+            mx_print_results(multi_sv[i].sv_stat, multi_sv[i].file_ins, multi_sv[i].block_count, print_mode);
+        else
+            mx_printchar('\n');
+    }
 }
 
 t_save_stat *get_file_agr_data(int file_count, int ac, char **av) {
@@ -178,13 +184,6 @@ void mx_free_double_ptr(void **ptr, int len) {
     free(ptr);
 }
 
-t_flags init_flags(void) {
-    t_flags ret;
-    ret.l = false;
-    ret.a = false;
-    return ret;
-}
-
 bool mx_is_dir(char *name, char *path) {
     char *full_name = mx_strjoin(path, name);
     DIR *dir;
@@ -197,6 +196,12 @@ bool mx_is_dir(char *name, char *path) {
     }
 }
 
+t_flags init_flags(void) {
+    t_flags ret;
+    ret.l = false;
+    ret.a = false;
+    return ret;
+}
 t_flags mx_get_flags(int ac, char **av) {
 
     t_flags ret = init_flags();
@@ -319,9 +324,8 @@ void mx_print_results(t_save_stat *sv_stat, int file_count, int block_sum, int p
     if (print_mode == PRINT_MODE_NORMAL) {
         for (int i = 0; i < file_count; i++) {
             mx_printstr(sv_stat[i].name);
-            mx_printchar('\t');
+            mx_printchar('\n');
         }
-        mx_printchar('\n');
     }
     else if (print_mode == PRINT_MODE_LONG) {
         if (block_sum != -1) {
@@ -329,7 +333,8 @@ void mx_print_results(t_save_stat *sv_stat, int file_count, int block_sum, int p
             mx_printint(block_sum);
             mx_printchar('\n');
         }
-        for (int i = 0; i < file_count; i++) {
+        int i = 0;
+        for (; i < file_count; i++) {
             mx_printchar(sv_stat[i].type);
             mx_printstr(sv_stat[i].perms);
             mx_printstr(DOUBLE_SPACE);
@@ -346,6 +351,8 @@ void mx_print_results(t_save_stat *sv_stat, int file_count, int block_sum, int p
             mx_printstr(sv_stat[i].name);
             mx_printchar('\n');
         }
+        if (i != file_count)
+            mx_printchar('\n');
     }
 }
 t_save_stat mx_get_data_frm_entry(t_dirent *entry, int *block_sum, char *path) {
@@ -356,7 +363,7 @@ t_save_stat mx_get_data_frm_entry(t_dirent *entry, int *block_sum, char *path) {
     char *user_name;
     char *dir_entry = mx_strjoin(path, entry->d_name);
     t_save_stat sv_stat;
-    //fprintf(stderr, "%s\t\n", dir_entry);
+    // fprintf(stderr, "%s\t\n", dir_entry);
     if (lstat(dir_entry, &rd_stat) == -1) {
         perror("lstat");
         exit(EXIT_FAILURE);
