@@ -27,7 +27,7 @@ t_save_stat mx_get_data_frm_entry(t_dirent *entry, int *block_sum, char *path)
         group_name = mx_strdup(group_info->gr_name);
 
     char buf_perm[10];
-    char *raw_time = ctime((const time_t *)&rd_stat.st_mtimensec);
+    char *raw_time = ctime((const time_t *)&rd_stat.st_mtimespec);
     char *time_tr = time_formater(raw_time);
     mx_strmode(rd_stat.st_mode, buf_perm);
 

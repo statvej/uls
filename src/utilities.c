@@ -39,11 +39,21 @@ char **mx_sort_strarr(char **str_arr, int size)
     return str_arr;
 }
 
-int get_sv_stat_index(char *name, t_save_stat *sv_stat, int file_count)
+int get_sv_stat_index_frm_name(char *name, t_save_stat *sv_stat, int file_count)
 {
     for (int i = 0; i < file_count; i++)
     {
         if (mx_strcmp(name, sv_stat[i].name) == 0)
+            return i;
+    }
+    return -1;
+}
+
+int get_sv_stat_index_frm_mem( long long int memory, t_save_stat *sv_stat, int file_count)
+{
+    for (int i = 0; i < file_count; i++)
+    {
+        if (sv_stat[i].used_mem == memory)
             return i;
     }
     return -1;
@@ -61,4 +71,24 @@ void mx_free_double_ptr(void **ptr, int len)
         free(ptr[i]);
     }
     free(ptr);
+}
+
+long long int *mx_sort_intarr(long long int *int_arr,int size)
+{
+    int sorted = 0;
+    while (!sorted)
+    {
+        sorted = 1;
+        for (int i = 0; i < size - 1; i++)
+        {
+            if (int_arr[i] - int_arr[i + 1] < 0)
+            {
+                int temp = int_arr[i];
+                int_arr[i] = int_arr[i + 1];
+                int_arr[i + 1] = temp;
+                sorted = 0;
+            }
+        }
+    }
+    return int_arr;
 }

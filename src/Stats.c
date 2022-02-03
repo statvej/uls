@@ -1,33 +1,59 @@
 #include "../inc/uls.h"
 
-t_save_stat *mx_sort_in_dir(t_save_stat *sv_stat, int file_count)
+t_save_stat *mx_sort_in_dir(t_save_stat *sv_stat, int file_count, int sort_mode)
 {
-    char **str_arr = (char **)malloc(sizeof(char *) * file_count);
     t_save_stat *ret = init_save_stat(file_count);
-    for (int i = 0; i < file_count; i++)
-    {
-        str_arr[i] = mx_strdup(sv_stat[i].name);
-    }
-    str_arr = mx_sort_strarr(str_arr, file_count);
-    for (int i = 0; i < file_count; i++)
-    {
-        int index = get_sv_stat_index(str_arr[i], sv_stat, file_count);
+    long long int *int_arr = NULL;
+    char **str_arr = NULL;
+    int indx = 0;
 
-        ret[i].name = mx_strdup(sv_stat[index].name);
-        ret[i].perms = mx_strdup(sv_stat[index].perms);
-        ret[i].time = mx_strdup(sv_stat[index].time);
-        ret[i].type = sv_stat[index].type;
-        ret[i].used_mem = sv_stat[index].used_mem;
-        ret[i].user_name = mx_strdup(sv_stat[index].user_name);
-        ret[i].group_name = mx_strdup(sv_stat[index].group_name);
-        ret[i].links_count = sv_stat[index].links_count;
+    if (sort_mode == SORT_MODE_MEM)
+    {
+
+        int_arr = (long long int *)malloc(sizeof(long long int) * file_count);
+
+        for (int i = 0; i < file_count; i++)
+        {
+            int_arr[i] = sv_stat[i].used_mem;
+        }
+         fprintf(stderr,"\n\n\n\n %lld \n\n\n\n\n", int_arr[2]);
+        int_arr = mx_sort_intarr(int_arr, file_count);
     }
-    free_sv_stat_arr(sv_stat, file_count); 
-    mx_free_double_ptr((void *)str_arr, file_count);
+
+    if (sort_mode == SORT_MODE_NORMAL)
+    {
+        str_arr = (char **)malloc(sizeof(char *) * file_count);
+        for (int i = 0; i < file_count; i++)
+        {
+            str_arr[i] = mx_strdup(sv_stat[i].name);
+        }
+        str_arr = mx_sort_strarr(str_arr, file_count);
+    }
+
+
+    for (int i = 0; i < file_count; i++)
+    {
+        if (sort_mode == SORT_MODE_MEM)
+        {
+            indx = get_sv_stat_index_frm_mem(int_arr[i], sv_stat, file_count);
+        }
+        else if (sort_mode == SORT_MODE_NORMAL)
+        {
+            indx = get_sv_stat_index_frm_name(str_arr[i], sv_stat, file_count);
+        }
+        ret[i].name = mx_strdup(sv_stat[indx].name);
+        ret[i].perms = mx_strdup(sv_stat[indx].perms);
+        ret[i].time = mx_strdup(sv_stat[indx].time);
+        ret[i].type = sv_stat[indx].type;
+        ret[i].used_mem = sv_stat[indx].used_mem;
+        ret[i].user_name = mx_strdup(sv_stat[indx].user_name);
+        ret[i].group_name = mx_strdup(sv_stat[indx].group_name);
+        ret[i].links_count = sv_stat[indx].links_count;
+    }
+    free_sv_stat_arr(sv_stat, file_count );
     return ret;
 }
-
-t_multi_sv_stat *mx_sort_in_multi(t_multi_sv_stat *multi_sv_stat, int dir_count)
+t_multi_sv_stat *mx_sort_in_multi(t_multi_sv_stat *multi_sv_stat, int dir_count, int sort_mode)
 {
     char **str_arr = (char **)malloc(sizeof(char *) * dir_count);
     t_multi_sv_stat *ret = init_multi_save_stat(dir_count);
@@ -38,18 +64,17 @@ t_multi_sv_stat *mx_sort_in_multi(t_multi_sv_stat *multi_sv_stat, int dir_count)
     str_arr = mx_sort_strarr(str_arr, dir_count);
     for (int i = 0; i < dir_count; i++)
     {
-        int index = get_multi_stat_index(str_arr[i], multi_sv_stat, dir_count);
+        int indexy = get_multi_stat_index(str_arr[i], multi_sv_stat, dir_count);
 
-        ret[i].name = mx_strdup(multi_sv_stat[index].name);
-        ret[i].block_count = multi_sv_stat[index].block_count;
-        ret[i].file_ins = multi_sv_stat[index].file_ins;
-        ret[i].sv_stat = mx_sort_in_dir(multi_sv_stat[index].sv_stat, ret[i].file_ins);
+        ret[i].name = mx_strdup(multi_sv_stat[indexy].name);
+        ret[i].block_count = multi_sv_stat[indexy].block_count;
+        ret[i].file_ins = multi_sv_stat[indexy].file_ins;
+        ret[i].sv_stat = mx_sort_in_dir(multi_sv_stat[indexy].sv_stat, ret[i].file_ins, sort_mode);
     }
-    free_multi_dir_arr(multi_sv_stat, dir_count);
-    mx_free_double_ptr((void *)str_arr, dir_count);
+    // free_multi_dir_arr(multi_sv_stat, dir_count);
+    // mx_free_double_ptr((void *)str_arr, dir_count);
     return ret;
 }
-
 t_multi_sv_stat *init_multi_save_stat(int dir_count)
 {
     t_multi_sv_stat *ret = (t_multi_sv_stat *)malloc(sizeof(t_multi_sv_stat) * dir_count);

@@ -2,8 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
-
-//#ifdef LINUX_KEY_WORD
+#ifdef LINUX_KEY_WORD
 
 #include <fcntl.h> /* For Ububntu */
 #include <sys/stat.h>
@@ -32,7 +31,7 @@ enum // For Ubuntu
 };
 
  
-//#endif
+#endif
 
 // for stat
 #include <unistd.h>
@@ -51,7 +50,8 @@ enum // For Ubuntu
 #include <time.h>
 #include <ctype.h>
 
-#define SORT_MODE 1
+#define SORT_MODE_NORMAL 1
+#define SORT_MODE_MEM 2
 
 #define MODE_NORMAL 1
 #define MODE_INCLUDE_HIDEN 2
@@ -128,7 +128,7 @@ char mx_get_restr(int mode);
 int get_read_mode(t_flags flags);
 
 int get_sort_mode(t_flags flags);
-
+ 
 int get_print_mode(t_flags flags);
 
 void mx_print_results(t_save_stat *sv_stat, int file_count, int block_sum, int print_mode);
@@ -147,9 +147,9 @@ char **get_dir_names(char **av, int ac, int dir_count);
 
 void print_multi_sv_stat(t_multi_sv_stat * multi_sv, int dir_count, int print_mode);
 
-t_save_stat *mx_sort_in_dir(t_save_stat *sv_stat, int file_count);
+t_save_stat *mx_sort_in_dir(t_save_stat *sv_stat, int file_count, int sort_mode);
 
-t_multi_sv_stat *mx_sort_in_multi(t_multi_sv_stat *multi_sv_stat, int dir_count);
+t_multi_sv_stat *mx_sort_in_multi(t_multi_sv_stat *multi_sv_stat, int dir_count, int sort_mode);
 
 t_multi_sv_stat *init_multi_save_stat(int dir_count);
 
@@ -157,10 +157,14 @@ void mx_print_mem_format(long long int used_mem);
 
 char **mx_sort_strarr(char **str_arr, int size);
 
-int get_sv_stat_index(char *name, t_save_stat *sv_stat, int file_count);
+int get_sv_stat_index_frm_name(char *name, t_save_stat *sv_stat, int file_count);
 
 int get_multi_stat_index(char *name, t_multi_sv_stat *multi_sv_stat, int dir_count);
 
 void free_sv_stat_arr(t_save_stat  *sv_stat, int file_count);
 
 void free_multi_dir_arr(t_multi_sv_stat *multi_dir, int dir_count);
+
+long long int *mx_sort_intarr(long long int *int_arr,int size);
+
+int get_sv_stat_index_frm_mem( long long int memory, t_save_stat *sv_stat, int file_count);

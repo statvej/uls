@@ -59,7 +59,8 @@ int get_print_mode(t_flags flags)
 int get_sort_mode(t_flags flags)
 {
     if (flags.S == true)
-    {
-        return SORT_MODE;
-    }
+        return SORT_MODE_MEM;
+
+    else
+        return SORT_MODE_NORMAL;
 }
