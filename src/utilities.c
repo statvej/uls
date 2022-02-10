@@ -92,7 +92,7 @@ long long int *mx_sort_intarr(long long int *int_arr, int size)
     return int_arr;
 }
 
-void mx_cheak_index(int *indx, int *temp_index, int file_count)
+void mx_chek_index(int *indx, int *temp_index, int file_count)
 {
     int temp = 0;
 
@@ -115,7 +115,7 @@ void mx_cheak_index(int *indx, int *temp_index, int file_count)
     }
 }
 
-int *mx_fill_temp(int file_count)
+int *mx_fill_temp_index(int file_count)
 {
     int *temp_index = (int *)malloc(sizeof(int) * (file_count+1));
     for (int i = 0; i < file_count+1; i++)

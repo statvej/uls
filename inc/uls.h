@@ -171,8 +171,8 @@ long long int *mx_sort_intarr(long long int *int_arr,int size);
 
 int get_sv_stat_index_frm_mem( long long int memory, t_save_stat *sv_stat, int file_count);
 
-void mx_print_intarr(int* intarr, int size);
+void mx_print_err_intarr(int* intarr, int size);
 
-void mx_cheak_index(int *indx, int *temp_index, int file_count);
+void mx_chek_index(int *indx, int *temp_index, int file_count);
 
-int* mx_fill_temp(int file_count);
+int* mx_fill_temp_index(int file_count);

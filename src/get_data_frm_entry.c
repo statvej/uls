@@ -9,7 +9,6 @@ t_save_stat mx_get_data_frm_entry(t_dirent *entry, int *block_sum, char *path)
     char *user_name;
     char *dir_entry = mx_strjoin(path, entry->d_name);
     t_save_stat sv_stat;
-    // fprintf(stderr, "%s\t\n", dir_entry);
     if (lstat(dir_entry, &rd_stat) == -1)
     {
         perror("lstat");

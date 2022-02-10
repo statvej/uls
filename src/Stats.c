@@ -12,7 +12,7 @@ t_save_stat *mx_sort_in_dir(t_save_stat *sv_stat, int file_count, int sort_mode)
 
     if (sort_mode == SORT_MODE_MEM)
     {
-        temp_index = mx_fill_temp(file_count);
+        temp_index = mx_fill_temp_index(file_count);
         int_arr = (long long int *)malloc(sizeof(long long int) * file_count);
         for (int i = 0; i < file_count; i++)
         {
@@ -37,7 +37,7 @@ t_save_stat *mx_sort_in_dir(t_save_stat *sv_stat, int file_count, int sort_mode)
         if (sort_mode == SORT_MODE_MEM)
         {
             indx = get_sv_stat_index_frm_mem(int_arr[i], sv_stat, file_count);
-            mx_cheak_index(&indx,temp_index, file_count);
+            mx_chek_index(&indx,temp_index, file_count);
         }
         else if (sort_mode == SORT_MODE_NORMAL)
         {
@@ -52,6 +52,7 @@ t_save_stat *mx_sort_in_dir(t_save_stat *sv_stat, int file_count, int sort_mode)
         ret[i].group_name = mx_strdup(sv_stat[indx].group_name);
         ret[i].links_count = sv_stat[indx].links_count;
     }
+    free(temp_index);
     free_sv_stat_arr(sv_stat, file_count );
     return ret;
 }
