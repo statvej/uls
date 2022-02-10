@@ -19,7 +19,7 @@ int main(int ac, char **av) {
     if (dir_in_arg + file_in_arg == 0) { // there for no arguments except flags
         int file_count = get_files_count(dir_name, read_mode);
         DIR *dir = opendir(dir_name);
-        fprintf(stderr, " luerhflqeiuf/n");
+       
         if (!dir) {
             perror("diropen");
             exit(EXIT_FAILURE);

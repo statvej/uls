@@ -18,7 +18,6 @@ void mx_print_mem_format(long long int used_mem)
     }
 }
 
-
 char **mx_sort_strarr(char **str_arr, int size)
 {
     int sorted = 0;
@@ -49,7 +48,7 @@ int get_sv_stat_index_frm_name(char *name, t_save_stat *sv_stat, int file_count)
     return -1;
 }
 
-int get_sv_stat_index_frm_mem( long long int memory, t_save_stat *sv_stat, int file_count)
+int get_sv_stat_index_frm_mem(long long int memory, t_save_stat *sv_stat, int file_count)
 {
     for (int i = 0; i < file_count; i++)
     {
@@ -73,7 +72,7 @@ void mx_free_double_ptr(void **ptr, int len)
     free(ptr);
 }
 
-long long int *mx_sort_intarr(long long int *int_arr,int size)
+long long int *mx_sort_intarr(long long int *int_arr, int size)
 {
     int sorted = 0;
     while (!sorted)
@@ -91,4 +90,38 @@ long long int *mx_sort_intarr(long long int *int_arr,int size)
         }
     }
     return int_arr;
+}
+
+void mx_cheak_index(int *indx, int *temp_index, int file_count)
+{
+    int temp = 0;
+
+    for (int i = 0; i < file_count; i++)
+    {
+
+        if (temp_index[i] == *indx)
+        {
+            temp = SAME_INDEX;
+        }
+        if (temp_index[i] < 0)
+        {
+            if (temp == SAME_INDEX)
+            {
+                *indx = i;
+            }
+            temp_index[i] = *indx;
+           break;
+        }
+    }
+}
+
+int *mx_fill_temp(int file_count)
+{
+    int *temp_index = (int *)malloc(sizeof(int) * (file_count+1));
+    for (int i = 0; i < file_count+1; i++)
+    {
+        temp_index[i] = -1;
+    }
+
+    return temp_index;
 }
