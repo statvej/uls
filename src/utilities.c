@@ -48,12 +48,22 @@ int get_sv_stat_index_frm_name(char *name, t_save_stat *sv_stat, int file_count)
     return -1;
 }
 
-int get_sv_stat_index_frm_mem(long long int memory, t_save_stat *sv_stat, int file_count)
+int get_sv_stat_index_frm_mem(long long int memory, t_save_stat *sv_stat, int file_count, int *temp, int count)
 {
     for (int i = 0; i < file_count; i++)
     {
-        if (sv_stat[i].used_mem == memory)
+        if (sv_stat[i].used_mem == memory && temp[count] == 0)
+        {
             return i;
+        }
+
+        if (sv_stat[i].used_mem == memory && temp[count] == 1)
+            temp[count] = 0;
+        for (int c = i + 1; sv_stat[c].used_mem != memory; c++)
+        {
+            if (sv_stat[c].used_mem == memory)
+                return c;
+        }
     }
     return -1;
 }
@@ -92,36 +102,39 @@ long long int *mx_sort_intarr(long long int *int_arr, int size)
     return int_arr;
 }
 
-void mx_chek_index(int *indx, int *temp_index, int file_count)
+long long int *mx_fill_longlongtemp_index(int file_count)
 {
-    int temp = 0;
-
+    long long int *temp_memory = (long long int *)malloc(sizeof(long long int) * (file_count));
     for (int i = 0; i < file_count; i++)
     {
-
-        if (temp_index[i] == *indx)
-        {
-            temp = SAME_INDEX;
-        }
-        if (temp_index[i] < 0)
-        {
-            if (temp == SAME_INDEX)
-            {
-                *indx = i;
-            }
-            temp_index[i] = *indx;
-           break;
-        }
+        temp_memory[i] = -1;
     }
+
+    return temp_memory;
 }
 
 int *mx_fill_temp_index(int file_count)
 {
-    int *temp_index = (int *)malloc(sizeof(int) * (file_count+1));
-    for (int i = 0; i < file_count+1; i++)
+    int *temp_index = (int *)malloc(sizeof(int) * (file_count));
+    for (int i = 0; i < file_count; i++)
     {
-        temp_index[i] = -1;
+        temp_index[i] = 0;
     }
 
     return temp_index;
+}
+
+int *mx_get_same_memory(long long int *memory, int file_count, int *temp_memory)
+{
+    for (int i = 0; i < file_count; i++)
+    {
+        for (int c = i + 1; c < file_count; c++)
+        {
+            if (memory[i] == memory[c])
+            {
+                temp_memory[i] = SAME_INDEX;
+            }
+        }
+    }
+    return temp_memory;
 }

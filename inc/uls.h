@@ -169,10 +169,14 @@ void free_multi_dir_arr(t_multi_sv_stat *multi_dir, int dir_count);
 
 long long int *mx_sort_intarr(long long int *int_arr,int size);
 
-int get_sv_stat_index_frm_mem( long long int memory, t_save_stat *sv_stat, int file_count);
+int get_sv_stat_index_frm_mem( long long int memory, t_save_stat *sv_stat, int file_count, int * temp, int count);
+
+void mx_print_err_longlongintarr(long long int* intarr, int size);
+
+long long int* mx_fill_longlongtemp_index(int file_count);
 
 void mx_print_err_intarr(int* intarr, int size);
 
-void mx_chek_index(int *indx, int *temp_index, int file_count);
-
 int* mx_fill_temp_index(int file_count);
+
+int * mx_get_same_memory(long long int *memory, int file_count, int *temp_memory);
